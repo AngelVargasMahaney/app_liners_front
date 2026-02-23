@@ -116,3 +116,18 @@ export const getCurrentRegDetail = async (regHead: number, activity: number, ubi
 };
 
 
+
+export const getPistolasTorque = async () => {
+    const res = await axios.get(`${urlBack}/pistolas-torque`);
+    return res.data.data;
+};
+
+export const postPistolasTorque = async (data: any) => {
+    const res = await axios.post(`${urlBack}/pistolas-torque`, data);
+    return res.data.data;
+};
+
+export const deletePistolaTorque = async (id: number) => {
+    const res = await axios.delete(`${urlBack}/pistolas-torque/${id}`);
+    return res.data.data;
+}

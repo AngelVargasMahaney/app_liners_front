@@ -2,10 +2,10 @@ import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { Slot } from "expo-router";
 import React from "react";
 import {
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,12 +34,12 @@ const AdminLayout = () => (
             {/* ================= FOOTER ================= */}
             <View style={styles.footer}>
                 <View style={styles.footerItem}>
-                    <MaterialIcons name="home" size={24} color="#999" />
+                    <MaterialIcons name="home" size={24} color="#1e88e5" />
                     <Text style={styles.footerText}>Inicio</Text>
                 </View>
 
                 <View style={styles.footerItem}>
-                    <MaterialIcons name="build" size={24} color="#1e88e5" />
+                    <MaterialIcons name="build" size={24} color="#999" />
                     <Text style={styles.footerTextActive}>Medición</Text>
                 </View>
 

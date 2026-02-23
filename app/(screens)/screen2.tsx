@@ -28,7 +28,6 @@ export default function Screen2() {
       router.push({ pathname: `/alimentacion` })
     }
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <Modal

@@ -12,7 +12,7 @@ import {
     View,
 } from "react-native";
 
-
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 
 // const EQUIPOS = [
@@ -26,6 +26,29 @@ export default function RegisterHeadModal({
     onClose,
     proyecto,
 }) {
+    const [dates, setDates] = useState({
+        initial: null as Date | null,
+        final: null as Date | null,
+    });
+
+    const [picker, setPicker] = useState<{
+        visible: boolean;
+        field: "initial" | "final" | null;
+        step: "date" | "time";
+    }>({
+        visible: false,
+        field: null,
+        step: "date",
+    });
+
+    const openPicker = (field: "initial" | "final") => {
+        setPicker({
+            visible: true,
+            field,
+            step: "date",
+        });
+    };
+
 
     const [equipments, setEquipments] = useState(null)
     const apiGetEquipments = async () => {
@@ -46,7 +69,6 @@ export default function RegisterHeadModal({
     useEffect(() => {
         apiGetEquipments()
     }, [])
-    console.log("Equipments", equipments);
 
     const { infoData, setInfoData } = useRegistroStore();
 
@@ -64,6 +86,7 @@ export default function RegisterHeadModal({
         }
     }, [visible]);
 
+
     const handleCreate = async () => {
         if (!proyecto || !equipo) {
             Alert.alert("Error", "Selecciona proyecto y equipo");
@@ -77,8 +100,14 @@ export default function RegisterHeadModal({
                 proyecto: proyecto.id,
                 equipo: equipo,
                 name: name || null,
-                initial_date: new Date().toISOString(),
                 extra_information: extra || null,
+                initial_date: dates.initial
+                    ? dates.initial.toISOString()
+                    : null,
+
+                final_date: dates.final
+                    ? dates.final.toISOString()
+                    : null,
             };
 
             console.log("payload", payload)
@@ -102,6 +131,37 @@ export default function RegisterHeadModal({
         } finally {
             setLoading(false);
         }
+    };
+    const handleChange = (event, selectedDate) => {
+        if (!selectedDate || !picker.field) {
+            setPicker({ visible: false, field: null, step: "date" });
+            return;
+        }
+
+        if (picker.step === "date") {
+            setDates(prev => ({
+                ...prev,
+                [picker.field]: selectedDate,
+            }));
+
+            setPicker(prev => ({ ...prev, step: "time" }));
+            return;
+        }
+
+        // combinar fecha + hora
+        setDates(prev => {
+            const base = new Date(prev[picker.field] || new Date());
+
+            base.setHours(selectedDate.getHours());
+            base.setMinutes(selectedDate.getMinutes());
+
+            return {
+                ...prev,
+                [picker.field]: base,
+            };
+        });
+
+        setPicker({ visible: false, field: null, step: "date" });
     };
 
     return (
@@ -128,6 +188,25 @@ export default function RegisterHeadModal({
                             ))}
                         </Picker>
                     </View>
+
+                    <Text style={styles.label}>Fecha inicial</Text>
+                    <TouchableOpacity style={styles.input} onPress={() => openPicker("initial")}>
+                        <Text>
+                            {dates.initial
+                                ? dates.initial.toLocaleString()
+                                : "Seleccionar fecha"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.label}>Fecha final</Text>
+                    <TouchableOpacity style={styles.input} onPress={() => openPicker("final")}>
+                        <Text>
+                            {dates.final
+                                ? dates.final.toLocaleString()
+                                : "Seleccionar fecha"}
+                        </Text>
+                    </TouchableOpacity>
+
 
                     {/* NOMBRE */}
                     <TextInput
@@ -167,6 +246,15 @@ export default function RegisterHeadModal({
                     </View>
                 </View>
             </View>
+            {picker.visible && (
+                <DateTimePicker
+                    value={dates[picker.field] || new Date()}
+                    mode={picker.step}
+                    display="default"
+                    is24Hour
+                    onChange={handleChange}
+                />
+            )}
         </Modal>
     );
 }

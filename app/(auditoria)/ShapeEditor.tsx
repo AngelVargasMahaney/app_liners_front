@@ -5,25 +5,29 @@ import { View } from "react-native";
 import { WebView } from "react-native-webview";
 
 export default function ShapeEditor({
-    imageUrl,
-    activity,
-    ubication,
-    job,
-    equipo
+  imageUrl,
+  activity,
+  ubication,
+  job,
+  equipo,
+  pistolasTorque
 }) {
 
-    const webviewRef = useRef<any>(null);
-    const [html, setHtml] = useState("");
-    const [shapes, setShapes] = useState<any[]>([]);
+  const webviewRef = useRef<any>(null);
+  const [html, setHtml] = useState("");
+  const [shapes, setShapes] = useState<any[]>([]);
 
-    const { infoData } = useRegistroStore();
+  const { infoData } = useRegistroStore();
 
-    /* ======================================
-       HTML BUILDER (TU VERSION FUNCIONAL)
-       SOLO agregamos lógica del div flotante
-    ====================================== */
+  /* ======================================
+     HTML BUILDER (TU VERSION FUNCIONAL)
+     SOLO agregamos lógica del div flotante
+  ====================================== */
+  const pistolasOptions = (pistolasTorque || [])
+    .map(p => `<option value="${p.id}">${p.serial_number}</option>`)
+    .join("");
 
-    const buildHTML = (image) => `
+  const buildHTML = (image) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,15 +106,27 @@ input,select,textarea{
 
 <option value="NO_CAMBIADO">No Cambiado</option>
 <option value="SIN_PERNO">Sin Perno</option>
+</select>
 
-<option value="NO_CAMBIADO">Incorrecta lubricación</option>
-<option value="NO_CAMBIADO">Limpieza deficiente</option>
-<option value="NO_CAMBIADO">Incorrecta procedimiento de torque</option>
-<option value="NO_CAMBIADO">Incorrecta ubicación de perno</option>
+<label>OBSERVACIÓN PERNO</label>
+<select id="obsPernoSelect">
+
+<option value="">-- Seleccionar --</option>
+
+<option value="Incorrecta lubricación">Incorrecta lubricación</option>
+<option value="Limpieza deficiente">Limpieza deficiente</option>
+<option value="Incorrecta procedimiento de torque">Incorrecta procedimiento de torque</option>
+<option value="Incorrecta ubicación de perno">Incorrecta ubicación de perno</option>
+
+</select>
+
+<label>PISTOLA TORQUE</label>
+<select id="pistolaSelect">
+<option value="">-- Seleccionar --</option>
 </select>
 
 
-<label>OBSERVACIONES</label>
+<label>COMENTARIOS</label>
 <textarea id="obsInput"></textarea>
 
 <div id="buttons">
@@ -127,8 +143,8 @@ let currentMarkers = [];
 
 var map=L.map('map',{
  crs:L.CRS.Simple,
- minZoom:-2,
- maxZoom:2
+ minZoom:-1.55,
+ maxZoom:-0.77
 });
 
 /* ==== IMAGEN (NO TOCAR LOGICA) ==== */
@@ -157,6 +173,9 @@ const itemInput=document.getElementById("itemInput");
 const valorInput=document.getElementById("valorInput");
 const condicionInput=document.getElementById("condicionInput");
 const pernoSelect=document.getElementById("pernoSelect");
+const obsPernoSelect=document.getElementById("obsPernoSelect");
+const pistolaSelect=document.getElementById("pistolaSelect");
+
 const obsInput=document.getElementById("obsInput");
 
 const btnAceptar=document.getElementById("btnAceptar");
@@ -184,12 +203,12 @@ function resolveEstado(p){
    };
  }
 
- if(causa === "Sin Perno"){
+ if(p.meta?.perno === "SIN_PERNO"){
    return {
      estado:"SIN_PERNO",
      condicion:"Sin perno / Tapón colocado"
    };
- }
+}
 
  if(causa){
    return {
@@ -351,6 +370,8 @@ function openEditor(latlng,data,marker){
  condicionInput.value=data.meta?.condicion||"Auto";
  pernoSelect.value=data.meta?.perno||"";
  obsInput.value=data.meta?.obs||"";
+obsPernoSelect.value = data.meta?.pernoCausa || "";
+pistolaSelect.value = data.meta?.pistolaTorque || "";
 
  editor.style.display="block";
 
@@ -360,21 +381,18 @@ function openEditor(latlng,data,marker){
  startBlink(marker);
 
 }
+
 pernoSelect.addEventListener("change",()=>{
 
  if(!selectedShape) return;
 
- const selectedOption =
-   pernoSelect.options[pernoSelect.selectedIndex];
-
  selectedShape.meta = selectedShape.meta || {};
 
- selectedShape.meta.perno = selectedOption.value || null;
- selectedShape.meta.pernoCausa = selectedOption.text || null;
+ selectedShape.meta.perno = pernoSelect.value || null;
 
  if(
-   selectedShape.meta.pernoCausa==="No Cambiado" ||
-   selectedShape.meta.pernoCausa==="Sin Perno"
+   selectedShape.meta.perno==="NO_CAMBIADO" ||
+   selectedShape.meta.perno==="SIN_PERNO"
  ){
    valorInput.value="";
    valorInput.disabled=true;
@@ -386,6 +404,30 @@ pernoSelect.addEventListener("change",()=>{
  applyColor(selectedShape);
 
 });
+pistolaSelect.addEventListener("change",()=>{
+
+ if(!selectedShape) return;
+
+ selectedShape.meta = selectedShape.meta || {};
+
+ selectedShape.meta.pistolaTorque =
+   pistolaSelect.value || null;
+
+});
+
+obsPernoSelect.addEventListener("change",()=>{
+
+ if(!selectedShape) return;
+
+ selectedShape.meta = selectedShape.meta || {};
+
+ selectedShape.meta.pernoCausa =
+   obsPernoSelect.value || null;
+
+ applyColor(selectedShape);
+
+});
+
 
 /* ================= BOTONES ================= */
 
@@ -409,7 +451,9 @@ btnAceptar.onclick=()=>{
  selectedShape.meta.valor = valorInput.value;
  selectedShape.meta.perno = pernoSelect.value;
  selectedShape.meta.obs = obsInput.value;
-
+selectedShape.meta.pistolaTorque = pistolaSelect.value;
+  selectedShape.meta.fechaRegistro = new Date().toISOString();
+  
  // 🔥 IMPORTANTE: quitar marker antes de stringify (Leaflet NO es serializable)
  const { marker, ...cleanShape } = selectedShape;
 
@@ -424,6 +468,22 @@ btnAceptar.onclick=()=>{
  }));
  editor.style.display="none";
 };
+
+/* ================= CARGANDO PISTOLAS ================= */
+function loadPistolas(pistolas){
+
+  pistolaSelect.innerHTML =
+    '<option value="">-- Seleccionar --</option>';
+
+  pistolas.forEach(p => {
+
+    pistolaSelect.innerHTML +=
+      '<option value="'+p.id+'">'+p.serial_number+'</option>';
+
+  });
+
+}
+
 
 /* ================= LOAD POINTS ================= */
 
@@ -471,7 +531,9 @@ function handleMessage(e){
  if(msg.type==="LOAD_POINTS"){
    loadPoints(msg.puntos);
  }
-
+ if(msg.type==="LOAD_PISTOLAS"){
+   loadPistolas(msg.pistolas);
+ }
 }
 
 document.addEventListener("message",handleMessage);
@@ -484,156 +546,160 @@ window.addEventListener("message",handleMessage);
 `;
 
 
-    /* ======================================
-       GENERAR HTML
-    ====================================== */
+  /* ======================================
+     GENERAR HTML
+  ====================================== */
 
-    useEffect(() => {
+  useEffect(() => {
 
-        if (!imageUrl) return;
+    if (!imageUrl) return;
+    setHtml(buildHTML(imageUrl));
 
-        setHtml(buildHTML(imageUrl));
+  }, [imageUrl]);
 
-    }, [imageUrl]);
+  /* ======================================
+     LOAD SHAPES BACKEND
+  ====================================== */
 
-    /* ======================================
-       LOAD SHAPES BACKEND
-    ====================================== */
+  useEffect(() => {
 
-    useEffect(() => {
+    if (!activity || !ubication || !job || !equipo) return;
 
-        if (!activity || !ubication || !job || !equipo) return;
+    loadShapes();
 
-        loadShapes();
+  }, [activity, ubication, job, equipo]);
+  const [currentDetailId, setCurrentDetailId] = useState<number | null>(null);
 
-    }, [activity, ubication, job, equipo]);
-    const [currentDetailId, setCurrentDetailId] = useState<number | null>(null);
+  const loadShapes = async () => {
+    try {
 
-    const loadShapes = async () => {
-        try {
+      const res = await getCurrentRegDetail(
+        Number(infoData.rhead),
+        activity,
+        ubication,
+        job
+      );
+      // console.log("MY RERSS", res);
 
-            const res = await getCurrentRegDetail(
-                Number(infoData.rhead),
-                activity,
-                ubication,
-                job
-            );
-            // console.log("MY RERSS", res);
+      if (!res.exists) {
+        // console.log("ESTOY AQUI");
 
-            if (!res.exists) {
-                // console.log("ESTOY AQUI");
+        setShapes([]);
+        setCurrentDetailId(null);
 
-                setShapes([]);
-                setCurrentDetailId(null);
+        return;
+      }
 
-                return;
-            }
+      const parsed = JSON.parse(res.shape_information || "[]");
+      // console.log("PARSED", parsed);
+      setCurrentDetailId(res.id);
 
-            const parsed = JSON.parse(res.shape_information || "[]");
-            // console.log("PARSED", parsed);
-            setCurrentDetailId(res.id);
+      setShapes(parsed);
 
-            setShapes(parsed);
+    } catch (err) {
+      console.log("LOAD SHAPES ERROR", err);
+      setCurrentDetailId(null);
 
-        } catch (err) {
-            console.log("LOAD SHAPES ERROR", err);
-            setCurrentDetailId(null);
+    }
 
-        }
+  };
 
-    };
+  const saveShapesToBackend = async (newShapes: any[]) => {
 
-    const saveShapesToBackend = async (newShapes: any[]) => {
+    try {
 
-        try {
+      // 🔥 limpiar marker antes de enviar (NO tocar shapes reales)
+      const cleanShapes = newShapes.map(({ marker, ...rest }) => rest);
 
-            // 🔥 limpiar marker antes de enviar (NO tocar shapes reales)
-            const cleanShapes = newShapes.map(({ marker, ...rest }) => rest);
+      const payload = {
+        register_head: Number(infoData.rhead),
+        activity,
+        ubication,
+        job,
+        shape_information: JSON.stringify(cleanShapes),
+      };
 
-            const payload = {
-                register_head: Number(infoData.rhead),
-                activity,
-                ubication,
-                job,
-                shape_information: JSON.stringify(cleanShapes),
-            };
+      await updateRegisterDetail(payload, Number(currentDetailId));
 
-            await updateRegisterDetail(payload, Number(currentDetailId));
+      console.log("UPDATED BACKEND OK");
 
-            console.log("UPDATED BACKEND OK");
+    } catch (err) {
+      console.log("UPDATE ERROR", err);
+    }
 
-        } catch (err) {
-            console.log("UPDATE ERROR", err);
-        }
-
-    };
-
-
-    /* ======================================
-       SYNC SHAPES → WEBVIEW
-    ====================================== */
-    // console.log("MY SHAPES", shapes);
-
-    useEffect(() => {
-
-        if (!webviewRef.current || !html) return;
-
-        webviewRef.current.postMessage(JSON.stringify({
-            type: "LOAD_POINTS",
-            puntos: shapes
-        }));
-
-    }, [shapes, html]);
-
-    /* ======================================
-       RENDER
-    ====================================== */
-
-    if (!html) return null;
-
-    return (
-
-        <View style={{ flex: 1 }}>
-
-            <WebView
-                ref={webviewRef}
-                originWhitelist={["*"]}
-                source={{ html }}
-                javaScriptEnabled
-                domStorageEnabled
-                onMessage={(e) => {
-
-                    const data = JSON.parse(e.nativeEvent.data);
-
-                    console.log("RECIBIDO RN:", data); // 👈 AGREGAR
-
-                    if (data.type === "SHAPE_UPDATED") {
-                        console.log("EDITADO OK"); // 👈 AGREGAR
-
-                        const updatedShape = data.shape;
-
-                        setShapes(prev => {
-
-                            const newShapes = prev.map(s =>
-                                s.id === updatedShape.id ? updatedShape : s
-                            );
-
-                            saveShapesToBackend(newShapes);
-
-                            return newShapes;
-
-                        });
-
-                    }
-                    
-
-                }}
+  };
 
 
-            />
+  /* ======================================
+     SYNC SHAPES → WEBVIEW
+  ====================================== */
+  // console.log("MY SHAPES", shapes);
 
-        </View>
+  useEffect(() => {
 
-    );
+    if (!webviewRef.current || !html) return;
+
+    webviewRef.current.postMessage(JSON.stringify({
+      type: "LOAD_POINTS",
+      puntos: shapes
+    }));
+
+    webviewRef.current.postMessage(JSON.stringify({
+      type: "LOAD_PISTOLAS",
+      pistolas: pistolasTorque || []
+    }));
+
+  }, [shapes, html, pistolasTorque]);
+
+
+  /* ======================================
+     RENDER
+  ====================================== */
+
+  if (!html) return null;
+
+  return (
+
+    <View style={{ flex: 1 }}>
+
+      <WebView
+        ref={webviewRef}
+        originWhitelist={["*"]}
+        source={{ html }}
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={(e) => {
+
+          const data = JSON.parse(e.nativeEvent.data);
+
+          console.log("RECIBIDO RN:", data); // 👈 AGREGAR
+
+          if (data.type === "SHAPE_UPDATED") {
+            console.log("EDITADO OK"); // 👈 AGREGAR
+
+            const updatedShape = data.shape;
+
+            setShapes(prev => {
+
+              const newShapes = prev.map(s =>
+                s.id === updatedShape.id ? updatedShape : s
+              );
+
+              saveShapesToBackend(newShapes);
+
+              return newShapes;
+
+            });
+
+          }
+
+
+        }}
+
+      />
+
+    </View>
+
+  );
 
 }

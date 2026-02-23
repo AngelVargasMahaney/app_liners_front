@@ -80,7 +80,7 @@ export default function LoginScreen() {
           <Text style={styles.bottomText}>
             ¿No tienes cuenta? <Text style={styles.link}>Regístrate</Text>
           </Text>
-        </View>
+        </View>   
       </ImageBackground>
     </KeyboardAvoidingView>
   );

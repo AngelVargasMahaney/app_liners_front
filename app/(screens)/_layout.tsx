@@ -1,50 +1,55 @@
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { Slot } from "expo-router";
+import { Slot, usePathname } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const ScreensLayout = () => (
-  <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-    {/* HEADER */}
-    <View style={styles.header}>
-      <TouchableOpacity>
-        <Feather name="menu" size={24} color="#fff" />
-      </TouchableOpacity>
+const ScreensLayout = () => {
+  const pathname = usePathname()
+  const isScreen2 = pathname === "/users/screen2";
 
-      <Text style={styles.headerTitle}>¡Hola, Juan Perez</Text>
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity>
+          <Feather name="menu" size={24} color="#fff" />
+        </TouchableOpacity>
 
-      <TouchableOpacity>
-        <Feather name="refresh-cw" size={20} color="#fff" />
-      </TouchableOpacity>
-    </View>
+        <Text style={styles.headerTitle}>¡Hola, Juan Perez</Text>
 
-    {/* CONTENIDO */}
-    <View style={styles.content}>
-      <Slot />
-    </View>
-
-    {/* FOOTER */}
-    <View style={styles.footer}>
-      <View style={styles.footerItem}>
-        <MaterialIcons name="home" size={24} color="#1e88e5" />
-        <Text style={styles.footerTextActive}>Inicio</Text>
+        <TouchableOpacity>
+          <Feather name="refresh-cw" size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.footerItem}>
-        <MaterialIcons name="build" size={24} color="#999" />
-        <Text style={styles.footerText}>Medición</Text>
+      {/* CONTENIDO */}
+      <View style={styles.content}>
+        <Slot />
       </View>
 
-      <TouchableOpacity style={styles.footerItem} onPress={()=>{
-        console.log("A")
-      }}>
-        <MaterialIcons name="description" size={24} color="#999" />
-        <Text style={styles.footerText}>Reportes</Text>
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
-);
+      {/* FOOTER */}
+      <View style={styles.footer}>
+        <View style={styles.footerItem}>
+          <MaterialIcons name="home" size={24} color="#1e88e5" />
+          <Text style={styles.footerTextActive}>Inicio</Text>
+        </View>
+
+        <View style={styles.footerItem}>
+          <MaterialIcons name="build" size={24} color={isScreen2 ? "#1e88e5" : "#999"} />
+          <Text style={styles.footerText}>Medición</Text>
+        </View>
+
+        <TouchableOpacity style={styles.footerItem} onPress={() => {
+          console.log("A")
+        }}>
+          <MaterialIcons name="description" size={24} color="#999" />
+          <Text style={styles.footerText}>Reportes</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  )
+}
 
 export default ScreensLayout;
 

@@ -1,5 +1,5 @@
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { Slot } from "expo-router";
+import { router, Slot } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,20 +26,22 @@ const ScreensLayout = () => (
 
         {/* FOOTER */}
         <View style={styles.footer}>
-            <View style={styles.footerItem}>
+            <TouchableOpacity style={styles.footerItem} onPress={() => {
+                router.push('/(users)/screen1')
+            }}>
                 <MaterialIcons name="home" size={24} color="#999" />
                 <Text style={styles.footerTextActive}>Inicio</Text>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.footerItem}>
                 <MaterialIcons name="build" size={24} color="#999" />
                 <Text style={styles.footerText}>Medición</Text>
             </View>
 
-            <View style={styles.footerItem}>
+            <TouchableOpacity style={styles.footerItem} >
                 <MaterialIcons name="description" size={24} color="#1e88e5" />
                 <Text style={styles.footerText}>Reportes</Text>
-            </View>
+            </TouchableOpacity>
         </View>
     </SafeAreaView>
 );

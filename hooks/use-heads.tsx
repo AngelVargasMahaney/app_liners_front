@@ -1,20 +1,21 @@
-import { getRHeadsByProject } from "@/api/client";
+import { getRHeadsByProjectEq } from "@/api/client";
 import { useEffect, useState } from "react";
 
 export function useRegisterHeads(projectId?: number) {
   const [heads, setHeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
-    if (!projectId) {
+  const load = async (id = projectId) => {
+    if (!id) {
       setHeads([]);
       return;
     }
 
     try {
       setLoading(true);
-      const res = await getRHeadsByProject(projectId)
-      
+      const res = await getRHeadsByProjectEq({
+        project:projectId
+      });
       setHeads(res);
     } catch (e) {
       console.log(e);
@@ -24,8 +25,9 @@ export function useRegisterHeads(projectId?: number) {
     }
   };
 
+
   useEffect(() => {
-    load();
+    load(projectId);
   }, [projectId]);
 
   return { heads, loading, reload: load };

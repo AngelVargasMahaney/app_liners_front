@@ -1,9 +1,11 @@
-import { getActByProjectEq, getEquipments, getJobs, getUbications } from '@/api/client';
+import { getActByProjectEq, getEquipments, getJobs, getPistolasTorque, getUbications } from '@/api/client';
 import { useRegistroStore } from '@/store/useRegistroStore';
+import Feather from '@expo/vector-icons/Feather';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from "react-native-dropdown-picker";
 import ShapeEditor from '../(auditoria)/ShapeEditor';
+
 
 export default function Screen1() {
   const [actividadOpen, setActividadOpen] = useState(false);
@@ -109,6 +111,18 @@ export default function Screen1() {
     }
   }
 
+  const [pistolasTorque, setPistolasTorque] = useState(null)
+
+  const apiGetPistols = async () => {
+    try {
+      const response = await getPistolasTorque()
+      const rsp = response.filter((obj) => obj.equipo === infoData.equipoSelected)
+      setPistolasTorque(rsp)
+
+    } catch (error) {
+      console.log("Error", error)
+    }
+  }
 
   useEffect(() => {
     apiGetEquipments()
@@ -116,6 +130,14 @@ export default function Screen1() {
     apiGetUbications()
     apiGetJobs()
   }, [])
+
+  useEffect(() => {
+    if (infoData.equipoSelected) {
+      apiGetPistols()
+    }
+  }, [infoData])
+
+
 
   const [imageLeaflet, setImageLeaflet] = useState(null)
 
@@ -144,82 +166,137 @@ export default function Screen1() {
 
 
 
-// console.log("TEARA", tarea);
+  // console.log("TEARA", tarea);
 
 
-//   console.log(infoData);
+  //   console.log(infoData);
 
 
+  const [minimizeBtn, setMinimizeBtn] = useState(false)
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{infoData.equipo}</Text>
-        <Text style={styles.cardSubtitle}>INFORMACION ADICIONAL</Text>
+      <View>
+        <View style={styles.card}>
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ padding: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={styles.cardTitle}>{infoData.equipo}</Text>
+              <Text style={styles.cardSubtitle}>INFORMACION ADICIONAL</Text>
+            </View>
+            {
+              minimizeBtn && actividad && ubicacion && tarea ?
+                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ borderLeftWidth: 1, padding: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {actividadItems?.find((obj) => obj.value === actividad)?.label}
+                  </Text>
+
+                  <Text style={{ borderLeftWidth: 1, padding: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {ubicacionItems?.find((obj) => obj.value === ubicacion)?.label}
+                  </Text>
+
+                  <Text style={{ borderLeftWidth: 1, padding: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {tareaItems?.find((obj) => obj.value === tarea)?.label}
+                  </Text>
+                </View> : null
+            }
+
+          </View>
+          <TouchableOpacity onPress={() => setMinimizeBtn(!minimizeBtn)}>
+            <Feather name={!minimizeBtn ? "minimize-2" : "maximize-2"} size={24} color="black" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: !minimizeBtn ? 'auto' : '0%', overflow: minimizeBtn ? 'hidden' : 'visible' }}>
+          <Text style={styles.sectionTitle}>Datos del Registro...</Text>
+
+          <View style={{ zIndex: 4000 }}>
+            <Text style={styles.label}>ACTIVIDAD</Text>
+            {
+              actividadItems !== null ?
+                <DropDownPicker
+                  open={actividadOpen}
+                  value={actividad}
+                  items={actividadItems}
+                  setOpen={setActividadOpen}
+                  setValue={setActividad}
+                  setItems={setActividadItems}
+                  placeholder="Seleccionar actividad"
+                  style={styles.dropdown}
+                  zIndex={3000}
+                /> : null
+            }
+          </View>
+
+          <View style={{ zIndex: 3000 }}>
+            <Text style={styles.label}>UBICACIÓN</Text>
+            {
+              ubicacionItems !== null ?
+                <DropDownPicker
+                  open={ubicacionOpen}
+                  value={ubicacion}
+                  items={ubicacionItems}
+                  setOpen={(open) => {
+                    setUbicacionOpen(open);
+                    setTareaOpen(false);
+                  }}
+                  setValue={setUbicacion}
+                  setItems={setUbicacionItems}
+                  placeholder="Seleccionar ubicación"
+                  style={styles.dropdown}
+                /> : null
+            }
+          </View>
+
+          <View style={{ zIndex: 2000, marginTop: 10 }}>
+            <Text style={styles.label}>TAREA</Text>
+            {
+              tareaItems !== null ?
+                <DropDownPicker
+                  open={tareaOpen}
+                  value={tarea}
+                  items={tareaItems}
+                  setOpen={(open) => {
+                    setTareaOpen(open);
+                    setUbicacionOpen(false);
+                  }}
+                  setValue={setTarea}
+                  setItems={setTareaItems}
+                  placeholder="Seleccionar tarea"
+                  style={styles.dropdown}
+                /> : null
+            }
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            {
+              infoData.equipoSelected === 1 ?
+                <Image
+                  source={require('../../assets/images/colores_shell.png')}
+                  style={
+                    {
+                      width: 350,
+                      height: 150,
+                      resizeMode: "contain",
+                    }
+                  }
+                /> : <Image
+                  source={require('../../assets/images/colores_alimentacion.png')}
+                  style={
+                    {
+                      width: 350,
+                      height: 150,
+                      resizeMode: "contain",
+                    }
+                  }
+                />
+            }
+          </View>
+        </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Datos del Registro...</Text>
 
-      <View style={{ zIndex: 4000 }}>
-        <Text style={styles.label}>ACTIVIDAD</Text>
-        {
-          actividadItems !== null ?
-            <DropDownPicker
-              open={actividadOpen}
-              value={actividad}
-              items={actividadItems}
-              setOpen={setActividadOpen}
-              setValue={setActividad}
-              setItems={setActividadItems}
-              placeholder="Seleccionar actividad"
-              style={styles.dropdown}
-              zIndex={3000}
-            /> : null
-        }
-      </View>
-
-      <View style={{ zIndex: 3000 }}>
-        <Text style={styles.label}>UBICACIÓN</Text>
-        {
-          ubicacionItems !== null ?
-            <DropDownPicker
-              open={ubicacionOpen}
-              value={ubicacion}
-              items={ubicacionItems}
-              setOpen={(open) => {
-                setUbicacionOpen(open);
-                setTareaOpen(false);
-              }}
-              setValue={setUbicacion}
-              setItems={setUbicacionItems}
-              placeholder="Seleccionar ubicación"
-              style={styles.dropdown}
-            /> : null
-        }
-      </View>
-
-      <View style={{ zIndex: 2000, marginTop: 10 }}>
-        <Text style={styles.label}>TAREA</Text>
-        {
-          tareaItems !== null ?
-            <DropDownPicker
-              open={tareaOpen}
-              value={tarea}
-              items={tareaItems}
-              setOpen={(open) => {
-                setTareaOpen(open);
-                setUbicacionOpen(false);
-              }}
-              setValue={setTarea}
-              setItems={setTareaItems}
-              placeholder="Seleccionar tarea"
-              style={styles.dropdown}
-            /> : null
-        }
-      </View>
       <View style={{ flex: 1, marginVertical: 10 }}>
         {/* <Alimentacion/> */}
-        <ShapeEditor imageUrl={imageLeaflet} activity={actividad} ubication={ubicacion} equipo={infoData.equipoSelected} job={tarea} />
+        <ShapeEditor pistolasTorque={pistolasTorque} imageUrl={imageLeaflet} activity={actividad} ubication={ubicacion} equipo={infoData.equipoSelected} job={tarea} />
       </View>
     </View>
   )
@@ -236,6 +313,9 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   cardTitle: {
     fontSize: 16,
