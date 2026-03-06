@@ -1,6 +1,6 @@
 import axios from "axios";
 
-let urlBack = "http://192.168.1.26:8000/api"
+let urlBack = "https://services-liners.dportal.app/api"
 
 // export const getCampaigns = async () => {
 //     const res = await api.get("/entities");
@@ -122,6 +122,11 @@ export const getPistolasTorque = async () => {
     return res.data.data;
 };
 
+export const getPistolasTorqueById = async (id: number) => {
+    const res = await axios.get(`${urlBack}/pistolas-torque/${id}`);
+    return res.data;
+};
+
 export const postPistolasTorque = async (data: any) => {
     const res = await axios.post(`${urlBack}/pistolas-torque`, data);
     return res.data.data;
@@ -130,4 +135,19 @@ export const postPistolasTorque = async (data: any) => {
 export const deletePistolaTorque = async (id: number) => {
     const res = await axios.delete(`${urlBack}/pistolas-torque/${id}`);
     return res.data.data;
+}
+
+export const putPistolaTorque = async (id: number, data: any) => {
+    const res = await axios.put(`${urlBack}/pistolas-torque/${id}`, data);
+    return res.data.data;
+}
+
+export const postPernosVerif = async (data: any) => {
+    const res = await axios.post(`${urlBack}/pernos-verif`, data);
+    return res.data.data;
+};
+
+export const getPernosVerifByData = async (equipo: number, ubicacion: number, color: string) => {
+    const res = await axios.get(`${urlBack}/pernos-verif?equipo=${equipo}&ubicacion=${ubicacion}&color=${color}`);
+    return res.data;
 }
